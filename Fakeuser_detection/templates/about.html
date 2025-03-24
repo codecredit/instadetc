@@ -1,27 +1,21 @@
+{% raw %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us - Spammer Detection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Submit to Google Sheets & Render JSON</title>
+    
     <style>
-         body {
-    font-family: 'Poppins', sans-serif;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    background-image: url('/static/spam.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-}
-
         header {
             background-color: rgba(76, 175, 80, 0.9);
             padding: 15px 0;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
         }
 
         .header-container {
@@ -56,70 +50,135 @@
             color: #ddd;
         }
 
-        .about-container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 30px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            padding-top: 80px;
+        }
+
+        .container {
             text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        h1 {
-            font-size: 2.5rem;
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: 600;
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
 
-        p {
-            font-size: 1.1rem;
-            color: #555;
-            line-height: 1.6;
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
         }
 
-        @media (max-width: 768px) {
-            .about-container {
-                width: 90%;
-            }
+        #output {
+            margin-top: 20px;
+        }
 
-            h1 {
-                font-size: 2rem;
-            }
+        .profile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin: 10px;
+        }
+
+        .profile img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #333;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script>
+        function submitForm(event) {
+            event.preventDefault(); 
+            let name = document.getElementById("name").value;
+            let url = "https://script.google.com/macros/s/AKfycbyp4CsUa3ji0iY54yvF7AR1CjnMq4p8Z4G1Zk8rK134rRGOGgL-ZQCwsXmwXvIcwH0N/exec";
+            
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({ "name": name, "overwrite": "true" })
+            })
+            .then(response => response.text())
+            .then(data => alert("Updated successfully!"))
+            .catch(error => alert("Error: " + error));
+        }
+
+        function fetchData() {
+            let url = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLgbS20OSHFdfPQ71W2ftLKfJNSKZJGROVA0vn2COxqLvT88nl4nRsAIrySXBlnanbVTuJXrptR8rKqO9SQ9OfZUynMvT1zKCsI2vcIQ42kyJ8ba4lzuwKpEAPJ31hqSJe52_5KqF5uJKBPWCfGxZf-atMVHMdBAJDBYpNO36jLCGFsGEx5IFSqp6ph07OX23L7NIVL_e57NFc5y87aKKsKWNXCBotWdVLL5qPUOvhtzMzd14XPGU4Wc4lI26eltel6Brt3tdrTFoMJ3vfqCkArq6G-i9w&lib=MIrRICl-jLI35ELQCBakC3Pg9uKiEqo84";
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    let output = document.getElementById("output");
+                    output.innerHTML = "";
+                    if (data && data.data && data.data.length > 0) {
+                        data.data.forEach((item, index) => {
+                            if (index % 2 !== 0) {
+                                let div = document.createElement("div");
+                                div.classList.add("profile");
+                                if (item.Follow === "#N/A" || item.image === "#N/A") {
+                                    div.innerHTML = `<p><strong>Fake ID</strong></p>`;
+                                } else {
+                                    div.innerHTML = `<img src="${item.image}" alt="Profile Image"> <p><strong>${item.Follow}</strong></p><p><strong>Genuine ID</strong></p>`;
+                                }
+                                output.appendChild(div);
+                            }
+                        });
+                    } else {
+                        let div = document.createElement("div");
+                        div.classList.add("profile");
+                        div.innerHTML = `<p><strong>Fake ID</strong></p>`;
+                        output.appendChild(div);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    let output = document.getElementById("output");
+                    output.innerHTML = "";
+                    let div = document.createElement("div");
+                    div.classList.add("profile");
+                    div.innerHTML = `<p><strong>Fake ID</strong></p>`;
+                    output.appendChild(div);
+                });
+        }
+    </script>
 </head>
 <body>
-
-    <!-- Header Section -->
     <header>
         <div class="header-container">
             <div class="logo">Spammer Detection System</div>
             <nav>
                 <a href="/">Home</a>
-                <a href="/about">About Us</a>
-               
+                <a href="/about">Predit with ID</a>
             </nav>
         </div>
     </header>
-
-    <!-- About Us Content -->
-    <div class="about-container">
-        <h1>About Us</h1>
-        <p>
-            Welcome to our Spammer Detection and Fake User Identification System. In today’s digital age, maintaining the integrity of online platforms is crucial. Our system is designed to distinguish between genuine users and spammers or fake accounts, ensuring a secure and trustworthy environment.
-        </p>
-        <p>
-            <strong>Spammer Detection:</strong> Our system identifies users who engage in unsolicited activities, such as spreading malware or engaging in disruptive behavior. By analyzing user profiles and behavior, we can effectively detect and mitigate spam.
-        </p>
-        <p>
-            <strong>Fake User Identification:</strong> We utilize advanced algorithms to differentiate between real and fake accounts. This helps in preventing fraudulent activities, such as phishing or scamming, ensuring that only authentic users interact on our platform.
-        </p>
-        <p>
-            Our goal is to provide a reliable tool for online platforms to maintain user trust and security. Thank you for using our system to help create a safer digital environment.
-        </p>
+    <div class="container">
+        <h2>Enter Instagram Id</h2>
+        <form onsubmit="submitForm(event)">
+            <input type="text" id="name" name="name" placeholder="Enter your name" required>
+            <button type="submit">Submit</button>
+        </form>
+        <h2>Predict Data</h2>
+        <button onclick="fetchData()">Load Data</button>
+        <div id="output"></div>
     </div>
 </body>
 </html>
+{% endraw %}
